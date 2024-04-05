@@ -246,28 +246,28 @@ loader.load('/free_-_high_quality_lamborghini_revuelto/scene.gltf',(gltf)=>{
     controls.target.copy(model.position)
 
     scene.add(model)
-    // // Add event listener to the renderer element
-    // renderer.domElement.addEventListener('click', handleClick);
+    // Add event listener to the renderer element
+    renderer.domElement.addEventListener('click', handleClick);
 
-    // function handleClick(event) {
-    //     // Get mouse coordinates relative to the renderer element
-    //     const mouse = {
-    //         x: (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
-    //         y: -(event.clientY / renderer.domElement.clientHeight) * 2 + 1,
-    //     };
+    function handleClick(event) {
+        // Get mouse coordinates relative to the renderer element
+        const mouse = {
+            x: (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
+            y: -(event.clientY / renderer.domElement.clientHeight) * 2 + 1,
+        };
 
-    //     // Set up raycaster
-    //     const raycaster = new THREE.Raycaster();
-    //     raycaster.setFromCamera(mouse, camera);
+        // Set up raycaster
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, camera);
 
-    //     // Check for intersections
-    //     const intersects = raycaster.intersectObjects([model], true);
+        // Check for intersections
+        const intersects = raycaster.intersectObjects([model], true);
 
-    //     // If model is clicked, navigate to another HTML page
-    //     if (intersects.length > 0) {
-    //         window.location.href = 'page.html'; // Replace 'another_page.html' with your desired destination
-    //     }
-    // }
+        // If model is clicked, navigate to another HTML page
+        if (intersects.length > 0) {
+            window.location.href = '/pages/page.html'; // Replace 'another_page.html' with your desired destination
+        }
+    }
 })
 
 // Load the bed model
