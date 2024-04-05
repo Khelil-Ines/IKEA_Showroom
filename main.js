@@ -265,7 +265,7 @@ loader.load('/free_-_high_quality_lamborghini_revuelto/scene.gltf',(gltf)=>{
 
         // If model is clicked, navigate to another HTML page
         if (intersects.length > 0) {
-            window.location.href = '/pages/page.html'; // Replace 'another_page.html' with your desired destination
+            window.location.href = '/pages/car.html'; // Replace 'another_page.html' with your desired destination
         }
     }
 })
@@ -275,12 +275,35 @@ loader.load('/bed/scene.gltf', (gltf) => {
     const model = gltf.scene;
     
     // Position, rotate, and scale the tree
-    model.position.set(0, 0.13 , 2); // Example position
+    model.position.set(-60, 0.13 , 10); // Example position
     model.rotation.set(0, 2.1, 0); // Example rotation
     model.scale.set(1.3,1.3,1.3); // Example scale
     
     // Add the tree to the scene
     scene.add(model);
+
+     // Add event listener to the renderer element
+     renderer.domElement.addEventListener('click', handleClick);
+
+     function handleClick(event) {
+         // Get mouse coordinates relative to the renderer element
+         const mouse = {
+             x: (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
+             y: -(event.clientY / renderer.domElement.clientHeight) * 2 + 1,
+         };
+ 
+         // Set up raycaster
+         const raycaster = new THREE.Raycaster();
+         raycaster.setFromCamera(mouse, camera);
+ 
+         // Check for intersections
+         const intersects = raycaster.intersectObjects([model], true);
+ 
+         // If model is clicked, navigate to another HTML page
+         if (intersects.length > 0) {
+             window.location.href = '/pages/bed.html'; // Replace 'another_page.html' with your desired destination
+         }
+     }
 });
 
 // Load the bedroom model
