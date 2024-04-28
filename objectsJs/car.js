@@ -237,7 +237,7 @@ loader.load("/main_scene/scene.gltf", (gltf)=>{
 // load the car model
 loader.load('../free_-_high_quality_lamborghini_revuelto/scene.gltf',(gltf)=>{
     const model = gltf.scene
-   carModel = model
+    carModel = model
     model.position.set(2, 0.13, 10)
     model.rotation.set(0, 2.1, 0)
     model.scale.set(1.3,1.3,1.3)

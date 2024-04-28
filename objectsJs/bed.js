@@ -241,8 +241,8 @@ loader.load('../bed/scene.gltf', (gltf) => {
     model.position.set(2, 0.13, 10)
     model.rotation.set(0, 2.1, 0)
     model.scale.set(1.3,1.3,1.3)
-    model.castShadow = true
-    controls.target.copy(model.position)
+     model.castShadow = true
+     controls.target.copy(model.position)
     
     // Add the tree to the scene
     scene.add(model);

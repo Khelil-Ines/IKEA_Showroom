@@ -7,14 +7,60 @@ let height, width, color, carModel;
 width = window.innerWidth
 height = window.innerHeight
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 30, width / height , 0.1, 1000 );
+const renderer = new THREE.WebGLRenderer();
+document.body.appendChild(renderer.domElement);
+renderer.setSize( width, height );
+const camera = new THREE.PerspectiveCamera( 50, width / height , 0.1, 1000 );
+const sceneLimitXMin = -100;
+const sceneLimitXMax = 100;
+const sceneLimitZMin = -100;
+const sceneLimitZMax = 100;
+const clock = new THREE.Clock(); // N'oubliez pas d'initialiser la clock quelque part dans votre code
+const planeGeometry = new THREE.PlaneGeometry(1000, 1000);
+const planeMaterial = new THREE.MeshBasicMaterial({ visible: false });
+const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+plane.rotation.x = -Math.PI / 2;  // Orienter le plan horizontalement
+scene.add(plane);
 
-// Nouvelles limites de la scène
-const sceneLimitXMin = -500; // Limite minimale sur l'axe X
-const sceneLimitXMax = 500; // Limite maximale sur l'axe X
-const sceneLimitZMin = -500; // Limite minimale sur l'axe Z
-const sceneLimitZMax = 500; // Limite maximale sur l'axe Z
+// Initialiser le raycaster
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
+renderer.domElement.addEventListener('dblclick', function(event) {
+    event.preventDefault();
+
+    // Convertir les coordonnées de la souris
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Raycasting
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(plane);
+
+    if (intersects.length > 0) {
+        const targetPosition = intersects[0].point;
+
+        // Calculer le vecteur direction opposé
+        const direction = new THREE.Vector3().subVectors(camera.position, targetPosition).normalize();
+
+        // Déterminer la nouvelle orientation de la caméra
+        const newCameraPosition = targetPosition;
+        const lookAtPosition = new THREE.Vector3().addVectors(targetPosition, direction);
+
+        // Animer la caméra
+        gsap.to(camera.position, {
+            x: newCameraPosition.x,
+            y: newCameraPosition.y,
+            z: newCameraPosition.z,
+            duration: 2,
+            ease: "power3.inOut",
+            onUpdate: function () {
+                camera.lookAt(lookAtPosition);
+                checkBounds();
+            }
+        });
+    }
+});
 
 
 // Ajouter des écouteurs d'événements clavier
@@ -42,55 +88,45 @@ function onKeyUp(event) {
     }
 }
 
+function checkBounds() {
+    console.log(`Before: x=${camera.position.x}, z=${camera.position.z}`);
+    camera.position.x = Math.max(sceneLimitXMin, Math.min(sceneLimitXMax, camera.position.x));
+    camera.position.z = Math.max(sceneLimitZMin, Math.min(sceneLimitZMax, camera.position.z));
+    console.log(`After: x=${camera.position.x}, z=${camera.position.z}`);
 
-// Functions to move the camera
-function moveCameraUp() {
-    if (keys.ArrowUp || camera.position.z - 1 >= sceneLimitZMin) {
-        camera.position.z -= 1;
-    }
 }
 
-function moveCameraDown() {
-    if (keys.ArrowDown || camera.position.z + 1 <= sceneLimitZMax) {
-        camera.position.z += 1;
-    }
-}
+const cameraSpeed = 5;
 
-function moveCameraLeft() {
-    if (keys.ArrowLeft || camera.position.x - 1 >= sceneLimitXMin) {
-        camera.position.x -= 1;
-    }
-}
+function updateCameraPosition(delta) {
+    if (!delta) delta = clock.getDelta(); // S'assure que delta est défini
+    // Calcul des vecteurs de déplacement avant et latéral basés sur l'orientation de la caméra
+    let forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+    forward.y = 0; // Ne change pas l'altitude de la caméra
+    forward.normalize();
 
-function moveCameraRight() {
-    if (keys.ArrowRight || camera.position.x + 1 <= sceneLimitXMax) {
-        camera.position.x += 1;
-    }
-}
-// Functions to move the camera based on keyboard input
-function moveCameraWithKeys() {
+    let right = new THREE.Vector3();
+    right.crossVectors(forward, camera.up);
+    right.normalize();
+
+    // Détection des touches pressées et ajustement de la position de la caméra
     if (keys.ArrowUp) {
-        moveCameraDown();
+        camera.position.addScaledVector(forward, cameraSpeed * delta);
     }
     if (keys.ArrowDown) {
-        moveCameraUp();
+        camera.position.addScaledVector(forward, -cameraSpeed * delta);
     }
     if (keys.ArrowLeft) {
-        moveCameraLeft();
-
+        camera.position.addScaledVector(right, -cameraSpeed * delta);
     }
     if (keys.ArrowRight) {
-        moveCameraRight();
-
+        camera.position.addScaledVector(right, cameraSpeed * delta);
     }
+    checkBounds();
 }
 
 
-
-
-
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize( width, height );
 renderer.shadowMap.enabled = true
 document.getElementById("three").
 appendChild( renderer.domElement );
@@ -158,26 +194,30 @@ dirLight.shadow.mapSize.height = 1024
 scene.add(dirLight)
 
 scene.background = new THREE.Color("rgb(245, 245, 220)")
-camera.position.set(0,-0.2, 0)
-camera.lookAt(0,0,0)
+camera.position.set(5, 3, 17)
+// camera.lookAt(2,0.13,10)
 // loading models
 let loadingIndicator = document.querySelector('.ld-ripple-container') 
 let loadingProgress = document.querySelector('.progress')
 const manager = new THREE.LoadingManager();
 manager.onStart = function ( url, itemsLoaded, itemsTotal ) {
+    console.log('Started loading file: ' + url + '\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
     loadingProgress.innerText = "0%"
 };
 
 manager.onLoad = function ( ) {
+    console.log('All resources are loaded');
     loadingIndicator.style.display = "none"
 };
 
 manager.onProgress = function ( url, itemsLoaded, itemsTotal ) {
+    console.log('Loading file: ' + url + ' (' + itemsLoaded + '/' + itemsTotal + ')');
     console.log( Math.floor((itemsLoaded/itemsTotal) * 100) + "%")
     loadingProgress.innerText = Math.floor((itemsLoaded/itemsTotal) * 100) + "%"
 };
 
 manager.onError = function ( url ) {
+
     console.log( 'There was an error loading ' + url );
 };
 
@@ -199,6 +239,8 @@ scene.add(mesh)
 const controls = new OrbitControls( camera, renderer.domElement );
  controls.enableDaming = true
  controls.screenPanning = true
+ //controls.enabled = false;
+
 // controls.minDistance = 9
 // controls.maxDistance = 14
 
@@ -265,11 +307,23 @@ loader.load('/free_-_high_quality_lamborghini_revuelto/scene.gltf',(gltf)=>{
 
         // If model is clicked, navigate to another HTML page
         if (intersects.length > 0) {
-            window.location.href = '/pages/car.html'; // Replace 'another_page.html' with your desired destination
+            window.open('/pages/car.html', '_blank'); // Open in a new tab
         }
     }
 })
 
+// load the man model
+loader.load('/man_win/scene.gltf',(gltf)=>{
+    const model = gltf.scene
+   carModel = model
+    model.position.set(4, 0.13, 10)
+    model.rotation.set(0, -0.1, 0)
+    model.scale.set(0.18, 0.18, 0.18)
+    model.castShadow = true
+    controls.target.copy(model.position)
+
+    scene.add(model)
+})
 // Load the bed model
 loader.load('/bed/scene.gltf', (gltf) => {
     const model = gltf.scene;
@@ -301,26 +355,54 @@ loader.load('/bed/scene.gltf', (gltf) => {
  
          // If model is clicked, navigate to another HTML page
          if (intersects.length > 0) {
-             window.location.href = '/pages/bed.html'; // Replace 'another_page.html' with your desired destination
+            // window.location.href = ('/pages/bed.html',' _blank'); 
+             window.open('/pages/bed.html', '_blank'); // Open in a new tab
+
          }
      }
 });
 
-// Load the bedroom model
-loader.load('/bedroom/scene.gltf', (gltf) => {
+loader.load('/kitchen/scene.gltf', (gltf) => {
     const model = gltf.scene;
     
-    // Position, rotate, and scale the bedroom
-    model.position.set(0, 0.13 , 2); // Example position
+    // Position, rotate, and scale the tree
+    model.position.set(-30, 0.13 , 10); // Example position
     model.rotation.set(0, 2.1, 0); // Example rotation
     model.scale.set(1.3,1.3,1.3); // Example scale
     
     // Add the tree to the scene
     scene.add(model);
+
+     // Add event listener to the renderer element
+     renderer.domElement.addEventListener('click', handleClick);
+
+     function handleClick(event) {
+         // Get mouse coordinates relative to the renderer element
+         const mouse = {
+             x: (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
+             y: -(event.clientY / renderer.domElement.clientHeight) * 2 + 1,
+         };
+ 
+         // Set up raycaster
+         const raycaster = new THREE.Raycaster();
+         raycaster.setFromCamera(mouse, camera);
+ 
+         // Check for intersections
+         const intersects = raycaster.intersectObjects([model], true);
+ 
+         // If model is clicked, navigate to another HTML page
+         if (intersects.length > 0) {
+             window.open('/pages/kitchen1.html', '_blank'); // Open in a new tab
+
+         }
+     }
 });
 
+
 function animate() {
-    moveCameraWithKeys();
+    const delta = clock.getDelta();
+    updateCameraPosition(delta);
+    //moveCameraWithKeys();
 	requestAnimationFrame( animate );
     controls.update()
 	renderer.render( scene, camera );
@@ -331,4 +413,6 @@ window.onresize = function(){
     camera.updateProjectionMatrix()
     renderer.setSize(widow.innerWidth, window.innerheight)
 }
+
+
 animate();
